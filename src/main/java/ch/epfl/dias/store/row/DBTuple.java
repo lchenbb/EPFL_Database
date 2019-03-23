@@ -13,6 +13,7 @@ public class DBTuple {
 		this.eof = false;
 	}
 
+	// End of page constructor
 	public DBTuple() {
 		this.eof = true;
 	}
@@ -20,24 +21,24 @@ public class DBTuple {
 	/**
 	 * XXX Assuming that the caller has ALREADY checked the datatype, and has
 	 * made the right call
-	 * 
+	 *
 	 * @param fieldNo
 	 *            (starting from 0)
 	 * @return cast of field
 	 */
 	public Integer getFieldAsInt(int fieldNo) {
-		return (Integer) fields[fieldNo];
+		return Integer.parseInt(fields[fieldNo].toString());
 	}
 
 	public Double getFieldAsDouble(int fieldNo) {
-		return (Double) fields[fieldNo];
+		return Double.parseDouble(fields[fieldNo].toString());
 	}
 
 	public Boolean getFieldAsBoolean(int fieldNo) {
-		return (Boolean) fields[fieldNo];
+		return Boolean.parseBoolean(fields[fieldNo].toString());
 	}
 
 	public String getFieldAsString(int fieldNo) {
-		return (String) fields[fieldNo];
+		return fields[fieldNo].toString();
 	}
 }

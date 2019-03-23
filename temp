@@ -1,0 +1,83 @@
+witch (this.agg) {
+
+					case MIN:
+						// Initialize current value
+						double double_current = current.getFieldAsDouble(this.fieldNo);
+						double double_next;
+
+						while (true) {
+
+							// Get next tuple from child
+							current = this.child.next();
+
+							// Return current value if no next
+							if (current == null)
+								return new DBTuple(new Object[]{double_current}, new DataType[]{this.dt});
+
+							// Check whether need to update min
+							double_next = current.getFieldAsDouble(this.fieldNo);
+							double_current = double_next > double_current ? double_current : double_next;
+						}
+
+					case MAX:
+
+						// Initialize current value
+						double double_current_max = current.getFieldAsDouble(this.fieldNo);
+						double double_next_max;
+
+						// Loop
+						while (true) {
+
+							// Get next tuple from child
+							current = this.child.next();
+
+							// Return current value if no next
+							if (current == null)
+								return new DBTuple(new Object[]{double_current_max}, new DataType[]{this.dt});
+
+							// Check whether need to update max
+							double_next_max = current.getFieldAsDouble(this.fieldNo);
+							double_current_max = double_next_max < double_current_max ? double_current_max : double_next_max;
+						}
+
+					case AVG:
+
+						// Initialize current value
+						double double_avg = current.getFieldAsDouble(this.fieldNo);
+						double count = 1;
+
+						// Loop
+						while (true) {
+
+							// Get next tuple from child
+							current = this.child.next();
+
+							// Return current value if no next
+							if (current == null)
+								return new DBTuple(new Object[]{(double) double_avg / count}, new DataType[]{this.dt});
+
+							// Forward sum and count
+							double_avg += current.getFieldAsDouble(this.fieldNo);
+							count += 1;
+						}
+
+					case SUM:
+
+						// Initialize current value
+						double double_sum = current.getFieldAsDouble(this.fieldNo);
+
+						// Loop 
+						while (true) {
+
+							// Get next tuple
+							current = this.child.next();
+
+							// Return if null
+							if (current == null)
+								return new DBTuple(new Object[]{double_sum}, new DataType[]{this.dt});
+
+							// Increment sum
+							//double_sum += current.getFieldAsDouble(this.fieldNo);
+						}
+
+				}

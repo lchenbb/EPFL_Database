@@ -62,6 +62,7 @@ public class VectorTest {
 		columnstoreEmpty.load();
 	}
 
+
 	@Test
 	public void spTestData() {
 		/* SELECT COUNT(*) FROM data WHERE col4 == 6 */
@@ -78,6 +79,7 @@ public class VectorTest {
 
 		assertTrue(output == 3);
 	}
+
 
 	@Test
 	public void spTestOrder() {
