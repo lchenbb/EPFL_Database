@@ -17,7 +17,7 @@ public class DBPAXpage {
 
     public int row_count;
 
-    public boolean eof;
+    public boolean eof = false;
 
     // End of page Constructor (Useless because EOF should be defined for row)
     public DBPAXpage(){

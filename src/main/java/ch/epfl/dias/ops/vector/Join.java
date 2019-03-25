@@ -35,9 +35,16 @@ public class Join implements VectorOperator {
 	public void open() {
 		// TODO: Implement
 
+		// Ask left and right child to open
+		this.leftChild.open();
+		this.rightChild.open();
+
 		// Build hash map from left child
 		DBColumn[] left_next;
 		int count = 0;
+
+		// Set flag of initialization of left col
+		boolean left_cols_initialized = false;
 
 		// Pull every bunch in
 		while ((left_next = this.leftChild.next()) != null) {
@@ -46,7 +53,7 @@ public class Join implements VectorOperator {
 			for (int i = 0; i < left_next[0].entries.length; i += 1) {
 
 				// Check whether need to add new key to hash map
-				if (hash_map.containsKey(left_next[this.leftFieldNo].entries[i]))
+				if (!hash_map.containsKey(left_next[this.leftFieldNo].entries[i]))
 					this.hash_map.put(left_next[this.leftFieldNo].entries[i],
 										new ArrayList<>());
 
@@ -60,9 +67,16 @@ public class Join implements VectorOperator {
 			// Store this bunch in left_cols
 			for (int i = 0; i < left_next.length; i += 1) {
 
+				// Initialize left cols to be null
+				if (!left_cols_initialized)
+					this.left_cols.add(null);
+
 				this.left_cols.set(i, this.merge_col(this.left_cols.get(i),
 													left_next[i]));
 			}
+
+			// Set left cols_initialized to be true
+			left_cols_initialized = true;
 		}
 	}
 
@@ -125,7 +139,7 @@ public class Join implements VectorOperator {
 
 					// Add right tuple's values
 					for (int k = 0; k < right_next.length; k += 1)
-						val_buffer.get(k + this.left_cols.size()).add(right_next[k].entries[j]);
+						val_buffer.get(k + this.left_cols.size()).add(right_next[k].entries[i]);
 				}
 			}
 

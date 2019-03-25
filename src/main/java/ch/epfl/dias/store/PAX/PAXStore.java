@@ -42,6 +42,8 @@ public class PAXStore extends Store {
 		this.delimiter = delimiter;
 
 		this.tuplePerPage = tuplesPerPage;
+
+		this.pages = new ArrayList<>();
 	}
 
 	@Override
@@ -70,8 +72,10 @@ public class PAXStore extends Store {
 
 		// Set temporary storage of un-transposed data block
 		ArrayList<ArrayList<String>> ori_block;
+
 		// Set temporary storage of transposed data block
 		ArrayList<ArrayList<String>> block = new ArrayList<ArrayList<String>>();
+
 		// Define transposed block row container
 		ArrayList<String> block_row = new ArrayList<String>();
 
@@ -100,6 +104,8 @@ public class PAXStore extends Store {
 
 				// Push to transposed block
 				block.add(block_row);
+
+				block_row = new ArrayList<>();
 			}
 
 			// Construct DBPAXpage from block

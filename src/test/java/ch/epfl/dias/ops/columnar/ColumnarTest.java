@@ -36,13 +36,13 @@ public class ColumnarTest {
 				DataType.DOUBLE, DataType.DOUBLE, DataType.DOUBLE, DataType.STRING, DataType.STRING, DataType.STRING,
 				DataType.STRING, DataType.STRING, DataType.STRING, DataType.STRING, DataType.STRING };
 
-		columnstoreData = new ColumnStore(schema, "input/data.csv", ",");
+		columnstoreData = new ColumnStore(schema, "input/data.csv", ",", true);
 		columnstoreData.load();
 
-		columnstoreOrder = new ColumnStore(orderSchema, "input/orders_small.csv", "\\|");
+		columnstoreOrder = new ColumnStore(orderSchema, "input/orders_small.csv", "\\|", true);
 		columnstoreOrder.load();
 
-		columnstoreLineItem = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
+		columnstoreLineItem = new ColumnStore(lineitemSchema, "input/lineitem_small.csv", "\\|", true);
 		columnstoreLineItem.load();
 	}
 
@@ -144,5 +144,40 @@ public class ColumnarTest {
 		int output = result[0].getAsInteger()[0];
 
 		assertTrue(output == 3);
+	}
+
+	@Test
+	public void test_select(){
+
+		ch.epfl.dias.ops.columnar.Scan scanOrder = new ch.epfl.dias.ops.columnar.Scan(columnstoreOrder);
+		ch.epfl.dias.ops.columnar.Select sel = new ch.epfl.dias.ops.columnar.Select(scanOrder, BinaryOp.NE, 0, 3);
+		sel.execute();
+	}
+
+	@Test
+	public void test_project(){
+
+		ch.epfl.dias.ops.columnar.Scan scanOrder = new ch.epfl.dias.ops.columnar.Scan(columnstoreOrder);
+		ch.epfl.dias.ops.columnar.Project proj = new ch.epfl.dias.ops.columnar.Project(scanOrder, new int[]{0});
+		proj.execute();
+	}
+
+	@Test
+	public void test_join(){
+
+		ch.epfl.dias.ops.columnar.Scan scan_left = new ch.epfl.dias.ops.columnar.Scan(columnstoreOrder);
+		ch.epfl.dias.ops.columnar.Scan scan_right = new ch.epfl.dias.ops.columnar.Scan(columnstoreLineItem);
+
+		ch.epfl.dias.ops.columnar.Join join = new ch.epfl.dias.ops.columnar.Join(scan_left, scan_right, 0, 0);
+		join.execute();
+	}
+
+	@Test
+	public void test_agg(){
+
+		ch.epfl.dias.ops.columnar.Scan scanOrder = new ch.epfl.dias.ops.columnar.Scan(columnstoreOrder);
+		ch.epfl.dias.ops.columnar.ProjectAggregate agg = new ch.epfl.dias.ops.columnar.ProjectAggregate(scanOrder, Aggregate.COUNT,
+																										DataType.INT, 0);
+		agg.execute();
 	}
 }

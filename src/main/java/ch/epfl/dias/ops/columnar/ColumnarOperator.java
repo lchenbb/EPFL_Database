@@ -4,14 +4,16 @@ import ch.epfl.dias.store.column.ColumnStore;
 import ch.epfl.dias.store.column.DBColumn;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public interface ColumnarOperator {
 
 
 	/**
-	 *
+	 * Return late_materialization indicator
 	 */
 	public boolean is_late_materialization();
+
 	/**
 	 * Return the store to upper operator
 	 * @return

@@ -31,6 +31,8 @@ public class ColumnStore extends Store {
 
 	public String delimiter;
 
+	public List<Integer> cols_used;
+
 	public boolean lateMaterialization;
 
 	public Integer col_num;
@@ -51,6 +53,8 @@ public class ColumnStore extends Store {
 		this.lateMaterialization = lateMaterialization;
 
 		this.col_num = schema.length;
+
+		this.cols_used = IntStream.range(0, this.col_num).boxed().collect(Collectors.toList());
 	}
 
 	@Override

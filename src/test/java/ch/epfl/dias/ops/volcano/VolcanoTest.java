@@ -9,6 +9,8 @@ import ch.epfl.dias.ops.BinaryOp;
 import ch.epfl.dias.store.DataType;
 import ch.epfl.dias.store.row.DBTuple;
 import ch.epfl.dias.store.row.RowStore;
+import ch.epfl.dias.store.PAX.DBPAXpage;
+import ch.epfl.dias.store.PAX.PAXStore;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -22,7 +24,11 @@ public class VolcanoTest {
     RowStore rowstoreData;
     RowStore rowstoreOrder;
     RowStore rowstoreLineItem;
-    
+
+    PAXStore PAXstoreData;
+    PAXStore PAXstoreOrder;
+    PAXStore PAXstoreLineItem;
+
     @Before
     public void init() throws IOException  {
     	
@@ -74,8 +80,19 @@ public class VolcanoTest {
         rowstoreOrder.load();
         
         rowstoreLineItem = new RowStore(lineitemSchema, "input/lineitem_small.csv", "\\|");
-        rowstoreLineItem.load();        
-    }
+        rowstoreLineItem.load();
+
+
+		PAXstoreData = new PAXStore(schema, "input/data.csv", ",", 50);
+		PAXstoreData.load();
+
+		PAXstoreOrder = new PAXStore(orderSchema, "input/orders_small.csv", "\\|", 50);
+		PAXstoreOrder.load();
+
+		PAXstoreLineItem = new PAXStore(lineitemSchema, "input/lineitem_small.csv", "\\|", 50);
+		PAXstoreLineItem.load();
+
+	}
     
 	@Test
 	public void spTestData(){
@@ -162,5 +179,47 @@ public class VolcanoTest {
 	    DBTuple result = agg.next();
 	    int output = result.getFieldAsInt(0);
 	    assertTrue(output == 3);
+	}
+
+	@Test
+	public void test_select(){
+
+		ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(PAXstoreOrder);
+		ch.epfl.dias.ops.volcano.Select sel = new ch.epfl.dias.ops.volcano.Select(scan, BinaryOp.GE, 0, 3);
+		sel.open();
+		DBTuple result = sel.next();
+		result.getFieldAsInt(0);
+	}
+
+	@Test
+	public void test_project(){
+
+		ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(PAXstoreOrder);
+		ch.epfl.dias.ops.volcano.Project proj = new ch.epfl.dias.ops.volcano.Project(scan, new int[]{0, 1});
+		proj.open();
+		proj.next();
+	}
+
+	@Test
+	public void test_join(){
+
+		ch.epfl.dias.ops.volcano.Scan scan_left = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrder);
+		ch.epfl.dias.ops.volcano.Scan scan_right = new ch.epfl.dias.ops.volcano.Scan(rowstoreLineItem);
+
+		ch.epfl.dias.ops.volcano.HashJoin join = new ch.epfl.dias.ops.volcano.HashJoin(scan_left, scan_right,0, 0);
+		join.open();
+
+		join.next();
+	}
+
+	@Test
+	public void test_agg(){
+
+    	ch.epfl.dias.ops.volcano.Scan scan = new ch.epfl.dias.ops.volcano.Scan(rowstoreOrder);
+    	ch.epfl.dias.ops.volcano.ProjectAggregate agg = new ch.epfl.dias.ops.volcano.ProjectAggregate(scan, Aggregate.COUNT, DataType.INT, 0);
+
+    	agg.open();
+
+    	agg.next();
 	}
 }

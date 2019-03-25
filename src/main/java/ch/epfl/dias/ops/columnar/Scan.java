@@ -8,6 +8,7 @@ import com.sun.xml.internal.ws.policy.privateutil.PolicyUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.IntStream;
 
 public class Scan implements ColumnarOperator {
@@ -20,11 +21,11 @@ public class Scan implements ColumnarOperator {
 	// Indicator of late materialization
 	private boolean is_late;
 
-	public Scan(ColumnStore store) {
+	public Scan(ColumnStore stores) {
 		// TODO: Implement
 
 		// Initialization
-		this.store = store;
+		this.store = stores;
 		this.is_late = this.store.lateMaterialization;
 
 	}
@@ -55,7 +56,8 @@ public class Scan implements ColumnarOperator {
 
 			// Return a DBColumn containing the ids
 			else
-				return new DBColumn[]{new DBColumn(IntStream.range(0, this.store.col_num).mapToObj(i -> i).toArray(),
+				return new DBColumn[]{new DBColumn(IntStream.range(0, this.store.getColumns(new int[]{0})[0].entries.length)
+															.mapToObj(i -> i).toArray(),
 													DataType.INT)};
 
 		} catch (IOException ex){

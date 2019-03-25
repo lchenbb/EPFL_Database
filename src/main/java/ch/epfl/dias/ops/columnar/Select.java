@@ -3,6 +3,7 @@ package ch.epfl.dias.ops.columnar;
 import java.security.cert.CollectionCertStoreParameters;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -20,7 +21,7 @@ public class Select implements ColumnarOperator {
 	private BinaryOp op;
 	private int fieldNo;
 	private int value;
-	private ArrayList<ColumnStore> store;
+	private ArrayList<ColumnStore> stores;
 	private boolean is_late;
 
 	public Select(ColumnarOperator child, BinaryOp op, int fieldNo, int value) {
@@ -30,9 +31,7 @@ public class Select implements ColumnarOperator {
 		this.op = op;
 		this.fieldNo = fieldNo;
 		this.value = value;
-		this.store = this.child.get_store();
 		this.is_late = this.child.is_late_materialization();
-		this.store = this.child.get_store();
 	}
 
 	@Override
@@ -44,7 +43,7 @@ public class Select implements ColumnarOperator {
 	public ArrayList<ColumnStore> get_store() {
 
 		// Return the pointer to self's store
-		return this.store;
+		return this.stores;
 	}
 
 	@Override
@@ -53,6 +52,10 @@ public class Select implements ColumnarOperator {
 
 		// Ask child to load columns
 		DBColumn[] columns = this.child.execute();
+
+
+		// Get updated child's store in case of project
+		this.stores = this.child.get_store();
 
 		// Return null if null is returned
 		if (columns == null)
@@ -76,14 +79,65 @@ public class Select implements ColumnarOperator {
 			filtered_results = new Boolean[filter_values.length];
 		} else {
 
-			// Late materialization, get data to be filter from ids
+			// Late materialization
 
-			// Get current indices
-			current_indices = columns[0].getAsInteger();
+			// Find store and col to be filtered at
 
-			// Get values to be filters
-			Integer[] target_column = this.store.get(0).getColumns(new int[]{this.fieldNo})[0]
+			// Initialize store counter
+			int store_index = 0;
+
+			// Initialize col count
+			int col_count = 0;
+
+			// Initialize col index to be filter at
+			int filter_col_index = 0;
+
+			// Initialize end of finding flag
+			boolean localization_end = false;
+
+			// Declare col used container
+			List<Integer> col_used;
+
+ 			while (!localization_end) {
+
+				// Load current store's col_used
+				col_used = this.stores.get(store_index).cols_used;
+
+				// Check whether field to check is in this store
+				for (int col_index : col_used) {
+
+					// Forward col_count in this store if not this col to be filtered
+					if (!(col_count == this.fieldNo))
+						col_count += 1;
+
+					// Break if find col to be filtered
+					else {
+
+						// Mark this col as col to be filtered
+						filter_col_index = col_index;
+
+						// Set localization_end flag to true
+						localization_end = true;
+
+						break;
+					}
+				}
+
+				// Break if localization ends
+				if (localization_end)
+					break;
+
+				// Forward store_index else
+				store_index += 1;
+			}
+
+			// Get current indices of store where col to be filtered resides in
+			current_indices = columns[store_index].getAsInteger();
+
+			// Get values to be filtered
+			Integer[] target_column = this.stores.get(store_index).getColumns(new int[]{filter_col_index})[0]
 														.getAsInteger();
+
 			filter_values = Arrays.stream(current_indices)
 									.map(i -> target_column[i])
 									.mapToInt(i -> i)
@@ -140,25 +194,65 @@ public class Select implements ColumnarOperator {
 						filtered_results[i] = false;
 					break;
 
+				case NE:
+
+					if (filter_values[i] != this.value)
+						filtered_results[i] = true;
+					else
+						filtered_results[i] = false;
+					break;
+
 			}
 		}
 
 		// Return filtered index if late materialization
 		if (this.is_late) {
 
-			// Build filtered index from filtered_result and current index
-			ArrayList<Integer> filtered_index = new ArrayList<>();
+			// Initialize return DBColumn array
+			DBColumn[] return_cols = new DBColumn[columns.length];
 
-			for (int i = 0; i < filtered_results.length; i += 1) {
+			// Declare current store's index
+			Integer[] current_store_index;
 
-				if (filtered_results[i])
-					filtered_index.add(current_indices[i]);
+			// Declare filtered index container
+			ArrayList<Integer> filtered_index;
+
+			// Get filtered index for each store
+			for (int i = 0; i < columns.length; i += 1) {
+
+				// Build filtered index from filtered_result and current index
+				filtered_index = new ArrayList<>();
+
+				// Get current store's index
+				current_store_index = columns[i].getAsInteger();
+
+				// Get filtered current store's index
+				for (int j = 0; j < filtered_results.length; j += 1) {
+
+					if (filtered_results[j])
+						filtered_index.add(current_store_index[j]);
+				}
+
+				// Push filtered index of current store into return cols
+				return_cols[i] = new DBColumn(filtered_index.toArray(),
+												DataType.INT);
 			}
 
-			// Return filtered index
-			return new DBColumn[]{new DBColumn(filtered_index.toArray(),
-												DataType.INT)};
+			// Return filtered col index
+			return return_cols;
 		}
+
+		// Check whether nothing selected
+		boolean null_to_return = true;
+		for (int i = 0; i < filtered_results.length; i += 1) {
+
+			if (filtered_results[i]){
+				null_to_return = false;
+				break;
+			}
+		}
+		if (null_to_return)
+			return null;
 
 		// Create filtered columns using map result
 		DBColumn[] filtered_cols = new DBColumn[columns.length];

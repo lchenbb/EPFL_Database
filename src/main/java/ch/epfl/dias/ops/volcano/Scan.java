@@ -45,7 +45,7 @@ public class Scan implements VolcanoOperator {
 		// Forward current row
 		current_row += 1;
 
-		if (current.eof)
+		if (current == null || current.eof)
 			return null;
 
 		return current;
